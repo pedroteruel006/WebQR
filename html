@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Código QR para imprimir en 3D — genera y descarga en 3MF | QR3D</title>
+<meta name="description" content="Crea tu código QR (carta, reseñas, Instagram, wifi), personalízalo y descárgalo en PNG/SVG o como objeto 3D listo para imprimir: soporte de mesa, llavero o placa de pared, en 3MF a dos colores. Gratis, sin registro.">
+<link rel="canonical" href="https://tu-dominio.com/">
+<meta property="og:title" content="QR3D — Códigos QR para imprimir en 3D">
+<meta property="og:description" content="Diseña tu QR y descárgalo listo para tu impresora 3D: soporte, llavero o placa, en 3MF a dos colores.">
+<meta property="og:type" content="website">
+<meta name="robots" content="index,follow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+} }
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.9.2/lib/qr-code-styling.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<style>
+:root{
+  --ink:#14161a; --paper:#eef2ef; --panel:#ffffff; --line:rgba(20,22,26,.12);
+  --accent:#12a296; --accent-dark:#0c7a71; --amber:#c8871f; --danger:#c1402f;
+  --muted:#5b6560; --radius:14px;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:'Inter',system-ui,sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.brand{font-family:'Space Grotesk',system-ui,sans-serif; font-weight:600; margin:0;}
+a{color:var(--accent-dark);}
+img{max-width:100%;}
+.wrap{max-width:1180px; margin:0 auto; padding:0 20px;}
+:focus-visible{outline:2px solid var(--accent-dark); outline-offset:2px;}
+@media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
+
+/* header */
+header.site{border-bottom:1px solid var(--line); background:var(--paper);}
+.site-row{display:flex; align-items:center; justify-content:space-between; padding:16px 0;}
+.brand{font-size:20px; display:flex; align-items:center; gap:8px;}
+.brand svg{flex:0 0 auto;}
+.site-row nav a{color:var(--ink); text-decoration:none; font-size:14px; font-weight:500; margin-left:22px;}
+.site-row nav a:hover{color:var(--accent-dark);}
+
+/* hero */
+.hero{padding:44px 0 18px;}
+.hero h1{font-size:clamp(28px,4vw,42px); line-height:1.12; max-width:820px; letter-spacing:-.01em;}
+.hero p.sub{max-width:620px; color:var(--muted); font-size:17px; margin-top:14px;}
+
+/* tool card */
+.tool-card{
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  margin-top:26px; padding:22px; box-shadow:0 1px 0 rgba(20,22,26,.02);
+}
+.tool-grid{display:grid; grid-template-columns:minmax(260px,360px) 1fr; gap:26px;}
+@media (max-width:880px){ .tool-grid{grid-template-columns:1fr;} }
+
+.field{margin-bottom:16px;}
+.field label{display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:var(--ink);}
+.field .hint{font-size:12px; color:var(--muted); margin-top:4px;}
+input[type=text],input[type=password],textarea,select{
+  width:100%; padding:10px 11px; border:1px solid var(--line); border-radius:9px;
+  font:inherit; font-size:14px; background:#fff; color:var(--ink);
+}
+textarea{resize:vertical; min-height:44px;}
+input:focus,textarea:focus,select:focus{border-color:var(--accent-dark);}
+
+.tabs{display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;}
+.tabs button{
+  flex:1; min-width:90px; padding:8px 10px; border:1px solid var(--line); background:#fff;
+  border-radius:9px; font:inherit; font-size:13px; font-weight:600; cursor:pointer; color:var(--muted);
+}
+.tabs button[aria-selected=true]{background:var(--ink); color:#fff; border-color:var(--ink);}
+.pane[hidden]{display:none;}
+
+.style-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+.style-grid button{
+  border:1px solid var(--line); background:#fff; border-radius:10px; padding:8px 4px 6px;
+  cursor:pointer; font:inherit; font-size:11.5px; color:var(--muted); font-weight:600;
+}
+.style-grid button svg{display:block; margin:0 auto 4px;}
+.style-grid button[aria-pressed=true]{border-color:var(--accent); color:var(--accent-dark); background:#effaf8;}
+
+.color-row{display:flex; gap:10px;}
+.color-field{flex:1;}
+.color-field label{font-size:12px; color:var(--muted); font-weight:600;}
+.swatch{display:flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:9px; padding:6px 8px;}
+.swatch input[type=color]{width:30px; height:30px; border:none; padding:0; background:none; border-radius:6px; cursor:pointer;}
+.swatch code{font-size:12px; color:var(--muted);}
+
+.center-picker{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;}
+.center-picker button{
+  width:34px; height:34px; border-radius:8px; border:1px solid var(--line); background:#fff;
+  font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.center-picker button[aria-pressed=true]{border-color:var(--accent); background:#effaf8;}
+.upload-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.btn-file{
+  display:inline-flex; align-items:center; gap:6px; border:1px dashed var(--line); border-radius:9px;
+  padding:8px 12px; cursor:pointer; font-size:13px; font-weight:600; color:var(--ink); background:#fff;
+}
+.btn-file input{display:none;}
+.chip-remove{border:none; background:none; color:var(--danger); font-size:12px; cursor:pointer; font-weight:600;}
+
+.format-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px;}
+.format-grid button{
+  border:1px solid var(--line); background:#fff; border-radius:10px; padding:10px 6px; cursor:pointer;
+  font:inherit; font-size:12.5px; font-weight:600; color:var(--muted); text-align:center;
+}
+.format-grid button[aria-pressed=true]{border-color:var(--accent); color:var(--accent-dark); background:#effaf8;}
+.format-grid svg{display:block; margin:0 auto 6px;}
+
+/* previews */
+.previews{display:flex; flex-direction:column; gap:16px;}
+.preview-box{border:1px solid var(--line); border-radius:12px; background:#fbfbfa; padding:14px;}
+.preview-box h3{font-size:13px; text-transform:none; color:var(--muted); font-weight:600; margin-bottom:10px;}
+#qrCanvasWrap{display:flex; justify-content:center; align-items:center; min-height:220px;}
+#qrCanvasWrap canvas, #qrCanvasWrap svg{max-width:230px; border-radius:8px;}
+.viewer-shell{position:relative; height:320px; border-radius:8px; overflow:hidden; background:linear-gradient(180deg,#e7ece9,#d9e0dc);}
+.viewer-shell canvas{width:100%!important; height:100%!important; display:block; touch-action:none;}
+.viewer-hint{position:absolute; bottom:8px; left:0; right:0; text-align:center; font-size:11px; color:var(--muted); pointer-events:none;}
+.viewer-msg{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:20px; font-size:13px; color:var(--muted);}
+
+.warnings{display:flex; flex-direction:column; gap:6px; margin-top:10px;}
+.warn{font-size:12.5px; padding:7px 10px; border-radius:8px; display:flex; gap:6px; align-items:flex-start;}
+.warn.ok{background:#e8f6f2; color:var(--accent-dark);}
+.warn.bad{background:#fbeceb; color:var(--danger);}
+.warn.mid{background:#fbf3e2; color:var(--amber);}
+
+.dl-row{display:flex; flex-wrap:wrap; gap:10px; margin-top:14px;}
+.btn{
+  appearance:none; border:none; border-radius:10px; padding:12px 18px; font:inherit; font-weight:700;
+  font-size:14.5px; cursor:pointer; display:inline-flex; align-items:center; gap:8px;
+}
+.btn-primary{background:var(--ink); color:#fff;}
+.btn-primary:hover{background:#000;}
+.btn-accent{background:var(--accent); color:#fff;}
+.btn-accent:hover{background:var(--accent-dark);}
+.btn-ghost{background:transparent; color:var(--ink); border:1px solid var(--line);}
+.btn-ghost:hover{border-color:var(--ink);}
+.btn[disabled]{opacity:.45; cursor:not-allowed;}
+.btn-sm{font-size:12.5px; padding:6px 10px; border-radius:8px; font-weight:600;}
+
+.privacy-badge{display:flex; align-items:center; gap:8px; margin-top:16px; font-size:12.5px; color:var(--muted);}
+.limits{font-size:12px; color:var(--muted); margin-top:6px;}
+
+/* ad slots */
+.ad-slot{
+  border:1px dashed rgba(20,22,26,.28); border-radius:10px; display:flex; align-items:center; justify-content:center;
+  color:var(--muted); font-size:12px; font-weight:600; letter-spacing:.04em; background:repeating-linear-gradient(45deg,#f4f4f2,#f4f4f2 10px,#eeeeec 10px,#eeeeec 20px);
+}
+.ad-leaderboard{min-height:90px; margin:34px 0;}
+.ad-incontent{min-height:250px; max-width:336px; margin:34px auto;}
+dialog.ad-dialog{border:none; border-radius:14px; padding:0; max-width:360px; width:92vw;}
+dialog.ad-dialog::backdrop{background:rgba(10,12,14,.45);}
+.ad-dialog-inner{padding:16px;}
+.ad-dialog-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+.ad-dialog-top span{font-size:12px; color:var(--muted); font-weight:600;}
+.ad-dialog-close{border:none; background:#f1f1ef; width:28px; height:28px; border-radius:8px; cursor:pointer; font-size:15px; line-height:1;}
+.ad-dialog .ad-slot{min-height:260px;}
+.ad-corner{
+  position:fixed; right:16px; bottom:16px; z-index:40; width:220px; background:#fff; border:1px solid var(--line);
+  border-radius:12px; box-shadow:0 8px 24px rgba(20,22,26,.14); padding:10px; display:flex; gap:8px; align-items:center;
+}
+.ad-corner .ad-slot{flex:1; min-height:56px;}
+.ad-corner button.close{border:none; background:none; font-size:14px; cursor:pointer; color:var(--muted); flex:0 0 auto;}
+
+/* content sections */
+section.content{padding:46px 0;}
+section.content h2{font-size:26px; margin-bottom:22px; max-width:640px;}
+.steps{display:grid; grid-template-columns:repeat(3,1fr); gap:20px;}
+@media (max-width:800px){.steps{grid-template-columns:1fr;}}
+.step{border:1px solid var(--line); border-radius:12px; padding:18px; background:var(--panel);}
+.step .num{font-family:'Space Grotesk',sans-serif; font-size:26px; color:var(--accent); margin-bottom:8px;}
+.step h3{font-size:15.5px; margin-bottom:6px;}
+.step p{font-size:13.5px; color:var(--muted); margin:0;}
+
+.seo-text{max-width:760px; font-size:15px; color:#33383a;}
+.seo-text p{margin:0 0 14px;}
+
+.ideas-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px;}
+.idea{border:1px solid var(--line); border-radius:12px; padding:16px; background:var(--panel);}
+.idea h3{font-size:14.5px; margin-bottom:6px; display:flex; align-items:center; gap:8px;}
+.idea p{font-size:13px; color:var(--muted); margin:0;}
+
+.faq{max-width:760px;}
+.faq details{border-bottom:1px solid var(--line); padding:14px 0;}
+.faq summary{cursor:pointer; font-weight:600; font-size:14.5px; list-style:none; display:flex; justify-content:space-between; gap:12px;}
+.faq summary::-webkit-details-marker{display:none;}
+.faq summary::after{content:'+'; font-size:18px; color:var(--muted); flex:0 0 auto;}
+.faq details[open] summary::after{content:'–';}
+.faq p{font-size:13.5px; color:var(--muted); margin:8px 0 0;}
+
+footer.site{border-top:1px solid var(--line); padding:26px 0; margin-top:10px;}
+.foot-row{display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:12.5px; color:var(--muted);}
+.foot-row a{color:var(--muted); text-decoration:none; margin-right:16px;}
+.foot-row a:hover{color:var(--ink);}
+
+.sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap;}
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap site-row">
+    <div class="brand">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="8" height="8" rx="1.5" stroke="#12a296" stroke-width="2"/><rect x="14" y="2" width="8" height="8" rx="1.5" stroke="#14161a" stroke-width="2"/><rect x="2" y="14" width="8" height="8" rx="1.5" stroke="#14161a" stroke-width="2"/><rect x="15" y="15" width="6" height="6" rx="1" fill="#12a296"/></svg>
+      QR3D
+    </div>
+    <nav>
+      <a href="#como-funciona">Cómo funciona</a>
+      <a href="#ideas">Ideas de uso</a>
+      <a href="#faq">Preguntas frecuentes</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <section class="hero">
+      <h1>Genera tu código QR y descárgalo listo para imprimir en 3D</h1>
+      <p class="sub">Pega el enlace de tu carta, tus reseñas de Google, tu Instagram o tu wifi. Personaliza el diseño y descárgalo en PNG, SVG, o como objeto 3D en 3MF a dos colores: soporte de mesa, llavero o placa de pared. Sin registro, funciona en tu navegador.</p>
+    </section>
+
+    <section class="tool-card" id="herramienta" data-state="idle">
+      <div class="tool-grid">
+
+        <!-- CONTROLS -->
+        <div class="controls">
+
+          <div class="field">
+            <label>¿Qué quieres codificar?</label>
+            <div class="tabs" role="tablist">
+              <button type="button" role="tab" id="tabLink" aria-selected="true" data-tab="link">Enlace / texto</button>
+              <button type="button" role="tab" id="tabWifi" aria-selected="false" data-tab="wifi">Wifi</button>
+            </div>
+            <div class="pane" id="paneLink">
+              <textarea id="inputLink" rows="2" placeholder="https://tu-carta.com, instagram.com/tu-negocio, g.page/tu-negocio/review…">https://tu-negocio.com</textarea>
+              <div class="hint">También vale texto libre, no solo enlaces.</div>
+            </div>
+            <div class="pane" id="paneWifi" hidden>
+              <div class="field"><label>Nombre de la red (SSID)</label><input type="text" id="wifiSsid" placeholder="MiCafeteria_WiFi"></div>
+              <div class="field"><label>Contraseña</label><input type="text" id="wifiPass" placeholder="contraseña123"></div>
+              <div class="field">
+                <label>Seguridad</label>
+                <select id="wifiSec"><option value="WPA">WPA / WPA2</option><option value="WEP">WEP</option><option value="nopass">Red abierta</option></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Estilo del QR</label>
+            <div class="style-grid" id="styleGrid"></div>
+          </div>
+
+          <div class="field">
+            <label>Colores</label>
+            <div class="color-row">
+              <div class="color-field">
+                <div class="swatch"><input type="color" id="colorBg" value="#F2F1EC"><code id="colorBgHex">#F2F1EC</code></div>
+                <label>Fondo / base</label>
+              </div>
+              <div class="color-field">
+                <div class="swatch"><input type="color" id="colorFg" value="#14161A"><code id="colorFgHex">#14161A</code></div>
+                <label>Código / relieve</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Logo o emoji central</label>
+            <div class="center-picker" id="emojiPicker"></div>
+            <div class="upload-row">
+              <label class="btn-file">📁 Subir logo
+                <input type="file" id="logoUpload" accept="image/*">
+              </label>
+              <button type="button" class="chip-remove" id="removeCenter" hidden>Quitar</button>
+            </div>
+          </div>
+
+          <hr style="border:none;border-top:1px solid var(--line); margin:20px 0;">
+
+          <div class="field">
+            <label>Formato para imprimir en 3D</label>
+            <div class="format-grid" id="formatGrid"></div>
+          </div>
+
+          <div class="field">
+            <label>Texto corto (nombre del negocio)</label>
+            <input type="text" id="label3d" maxlength="24" placeholder="Café Aurora" value="Tu negocio">
+          </div>
+
+          <div class="field">
+            <label>Tamaño</label>
+            <select id="sizeSelect">
+              <option value="0.8">Pequeño</option>
+              <option value="1" selected>Mediano</option>
+              <option value="1.3">Grande</option>
+            </select>
+          </div>
+
+          <div class="warnings" id="warnings"></div>
+        </div>
+
+        <!-- PREVIEWS -->
+        <div class="previews">
+          <div class="preview-box">
+            <h3>Vista previa 2D</h3>
+            <div id="qrCanvasWrap"><div class="viewer-msg">Generando QR…</div></div>
+            <div class="dl-row">
+              <button class="btn btn-ghost btn-sm" id="dlPng">Descargar PNG</button>
+              <button class="btn btn-ghost btn-sm" id="dlSvg">Descargar SVG</button>
+            </div>
+          </div>
+
+          <div class="preview-box">
+            <h3>Vista previa 3D — arrastra para girar</h3>
+            <div class="viewer-shell" id="viewerShell">
+              <div class="viewer-msg" id="viewerMsg">La vista 3D se cargará al llegar aquí…</div>
+            </div>
+            <div class="viewer-hint">Arrastra para orbitar · rueda para hacer zoom</div>
+            <div class="dl-row">
+              <button class="btn btn-accent" id="dl3mf">Descargar 3MF (para imprimir)</button>
+              <button class="btn btn-ghost btn-sm" id="dlStl">Descargar STL (impresoras antiguas)</button>
+            </div>
+          </div>
+
+          <p class="privacy-badge">🔒 100&nbsp;% privado — tu QR se genera y se modela en tu propio navegador, no se sube a ningún servidor.</p>
+          <p class="limits">El archivo 3MF guarda los dos colores dentro del propio archivo: tu slicer (Bambu Studio, PrusaSlicer, OrcaSlicer, Cura…) asignará cada parte a un filamento automáticamente.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="ad-slot ad-leaderboard" aria-hidden="true">ANUNCIO<!-- PEGA AQUÍ TU CÓDIGO DE ADSENSE --></div>
+  </div>
+
+  <section class="content" id="como-funciona">
+    <div class="wrap">
+      <h2>Cómo funciona</h2>
+      <div class="steps">
+        <div class="step"><div class="num">1</div><h3>Pega tu enlace y personalízalo</h3><p>Carta digital, reseñas de Google, Instagram, wifi del local… elige el estilo, los colores y un logo o emoji para el centro.</p></div>
+        <div class="step"><div class="num">2</div><h3>Elige el formato 3D</h3><p>Soporte de mesa, llavero o placa de pared. Añade el nombre de tu negocio y comprueba en la vista previa cómo queda con tus dos colores.</p></div>
+        <div class="step"><div class="num">3</div><h3>Descarga e imprime</h3><p>Baja el archivo 3MF, ábrelo en el programa de tu impresora, carga dos filamentos y listo: el código ya sale con contraste real para escanearse.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <div class="ad-slot ad-incontent" aria-hidden="true">ANUNCIO<!-- PEGA AQUÍ TU CÓDIGO DE ADSENSE --></div>
+  </div>
+
+  <section class="content" id="sobre-3mf">
+    <div class="wrap">
+      <h2>Por qué el 3MF y no solo un STL</h2>
+      <div class="seo-text">
+        <p>Un código QR impreso solo se puede escanear si hay contraste real entre el fondo y los módulos oscuros: si imprimes la pieza en un único color, un teléfono no distingue dónde empieza y termina el código. El formato STL clásico no guarda información de color, así que la única forma de conseguir ese contraste con un STL es cambiar de filamento a mano, capa a capa, algo poco práctico para la mayoría de la gente.</p>
+        <p>El 3MF resuelve esto de raíz: es un formato moderno (un zip con XML por dentro) que puede describir varias piezas dentro de un mismo objeto, cada una con su propio color. Bambu Studio, PrusaSlicer, OrcaSlicer y Cura lo leen de forma nativa y, al abrirlo, colocan automáticamente la base en un filamento y el código en relieve en otro, sin que tengas que tocar nada. Por eso esta herramienta genera siempre un 3MF como descarga principal, y deja el STL como alternativa secundaria para quien todavía use una impresora o un slicer más antiguo.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="content" id="ideas">
+    <div class="wrap">
+      <h2>Ideas para usar tu QR impreso</h2>
+      <div class="ideas-grid">
+        <div class="idea"><h3>🍽️ Carta de restaurante</h3><p>Un soporte de mesa con el QR a tu carta digital: nada de plastificar papel ni reimprimir cuando cambian los precios.</p></div>
+        <div class="idea"><h3>⭐ "Déjanos una reseña"</h3><p>El mismo soporte enlazando a tu ficha de Google. Colócalo junto a la caja o en cada mesa.</p></div>
+        <div class="idea"><h3>📶 Wifi del alojamiento</h3><p>Una placa de pared con la red y contraseña codificadas: tus huéspedes se conectan sin preguntar.</p></div>
+        <div class="idea"><h3>🔑 Llaveros para eventos</h3><p>Llaveros con QR a la agenda de una boda, un congreso o un cumpleaños: recuerdo y utilidad a la vez.</p></div>
+        <div class="idea"><h3>📸 Redes sociales</h3><p>Un pequeño soporte junto al mostrador con tu Instagram o TikTok, listo para un escaneo rápido.</p></div>
+        <div class="idea"><h3>🏠 Portal y recepción</h3><p>Placas de pared con el QR al directorio de la comunidad, al horario o al contacto de conserjería.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content" id="faq">
+    <div class="wrap">
+      <h2>Preguntas frecuentes</h2>
+      <div class="faq" id="faqList"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="wrap foot-row">
+    <div><a href="#">Privacidad</a><a href="#">Aviso legal</a><a href="#">Cookies</a></div>
+    <div>© 2026 QR3D. Los códigos QR se generan localmente en tu navegador.</div>
+  </div>
+</footer>
+
+<dialog class="ad-dialog" id="dlDialog">
+  <div class="ad-dialog-inner">
+    <div class="ad-dialog-top"><span>Publicidad</span><button class="ad-dialog-close" id="dlDialogClose" aria-label="Cerrar">✕</button></div>
+    <div class="ad-slot" aria-hidden="true">ANUNCIO<!-- PEGA AQUÍ TU CÓDIGO DE ADSENSE --></div>
+    <p style="font-size:12px;color:var(--muted);margin:10px 0 0;">Tu descarga ya ha empezado.</p>
+  </div>
+</dialog>
+
+<aside class="ad-corner" id="cornerAd" hidden>
+  <div class="ad-slot" aria-hidden="true">ANUNCIO</div>
+  <button class="close" id="cornerAdClose" aria-label="Cerrar">✕</button>
+</aside>
+
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org","@type":"WebApplication","name":"QR3D",
+  "description":"Generador de códigos QR personalizables descargables en PNG, SVG y como objeto 3D (3MF/STL) para imprimir: soporte de mesa, llavero o placa de pared.",
+  "applicationCategory":"DesignApplication","operatingSystem":"Any",
+  "offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"}
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+    {"@type":"Question","name":"¿Qué es exactamente el archivo 3MF que descargo?","acceptedAnswer":{"@type":"Answer","text":"Es un archivo de impresión 3D en formato .3mf que contiene dos piezas: la base y el código en relieve, cada una con su color asignado. Al abrirlo en el software de tu impresora, cada pieza aparece ya coloreada, lista para asignarle un filamento distinto."}},
+    {"@type":"Question","name":"¿Con qué impresora 3D funciona?","acceptedAnswer":{"@type":"Answer","text":"Con cualquier impresora que admita dos colores o dos filamentos: sistemas multicolor tipo AMS o MMU, o un cambio de filamento manual guiado por el propio slicer. El software debe soportar 3MF, algo habitual en Bambu Studio, PrusaSlicer, OrcaSlicer y Cura."}},
+    {"@type":"Question","name":"¿Qué tamaño mínimo debe tener para que se pueda escanear?","acceptedAnswer":{"@type":"Answer","text":"La herramienta calcula el tamaño de cada módulo del QR según las dimensiones que elijas y avisa si baja de 1,5 mm, el límite a partir del cual el nozzle empieza a redondear las esquinas y el código pierde nitidez."}},
+    {"@type":"Question","name":"¿Puedo usar mi propio logo?","acceptedAnswer":{"@type":"Answer","text":"Sí, puedes subir una imagen o elegir un emoji para el centro del QR. Se convierte a una silueta de un solo color, tanto en la imagen 2D como en el relieve 3D."}},
+    {"@type":"Question","name":"¿Es gratis?","acceptedAnswer":{"@type":"Answer","text":"Sí, la herramienta es gratuita y no requiere registro."}}
+  ]
+}
+</script>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- utilidades ---------- */
+function $(s,c){return (c||document).querySelector(s);}
+function $all(s,c){return Array.from((c||document).querySelectorAll(s));}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function debounce(fn,ms){let t; return function(...a){clearTimeout(t); t=setTimeout(()=>fn.apply(null,a),ms);};}
+function loadScriptOnce(){ /* qr-code-styling / jszip cargan por <script defer> en <head> */ }
+function safe(fn){ try{ return fn(); }catch(e){ console.error(e); return null; } }
+
+function hexToRgb(hex){
+  hex=hex.replace('#','');
+  if(hex.length===3) hex=hex.split('').map(c=>c+c).join('');
+  const n=parseInt(hex,16);
+  return {r:(n>>16)&255, g:(n>>8)&255, b:n&255};
+}
+function relLuminance(hex){
+  const {r,g,b}=hexToRgb(hex);
+  const f=c=>{c/=255; return c<=0.03928? c/12.92 : Math.pow((c+0.055)/1.055,2.4);};
+  return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b);
+}
+function contrastRatio(h1,h2){
+  const L1=relLuminance(h1), L2=relLuminance(h2);
+  const a=Math.max(L1,L2), b=Math.min(L1,L2);
+  return (a+0.05)/(b+0.05);
+}
+function slugFromText(t){
+  return (t||'qr').toLowerCase().replace(/^https?:\/\//,'').replace(/^www\./,'')
+    .replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').slice(0,40) || 'qr';
+}
+
+/* ---------- estado ---------- */
+const STYLES = {
+  clasico:    { label:'Clásico',   dots:'square',         corners:'square',        cornerDot:'square' },
+  redondeado: { label:'Redondeado',dots:'rounded',        corners:'extra-rounded', cornerDot:'dot'    },
+  puntos:     { label:'Puntos',    dots:'dots',           corners:'dot',           cornerDot:'dot'    },
+  elegante:   { label:'Elegante',  dots:'classy-rounded', corners:'extra-rounded', cornerDot:'square' }
+};
+const EMOJIS = ['🍕','🍔','🍺','📶','⭐','📸','🎉','🏠','💬','✔️','🎂','☕'];
+const FORMATS = {
+  soporte:{ label:'Soporte de mesa' },
+  llavero:{ label:'Llavero' },
+  placa:  { label:'Placa de pared' }
+};
+
+const state = {
+  tab:'link',
+  text:'https://tu-negocio.com',
+  wifi:{ssid:'',pass:'',sec:'WPA'},
+  style:'redondeado',
+  colorBg:'#F2F1EC',
+  colorFg:'#14161A',
+  center:{type:'emoji', value:'⭐', dataUrl:null},
+  format:'soporte',
+  label3d:'Tu negocio',
+  sizeScale:1,
+  genQr:0,
+  gen3d:0
+};
+
+/* ---------- payload ---------- */
+function buildPayload(){
+  if(state.tab==='wifi'){
+    const esc=s=>String(s||'').replace(/([\\;,:"])/g,'\\$1');
+    return `WIFI:T:${state.wifi.sec};S:${esc(state.wifi.ssid)};${state.wifi.sec==='nopass'?'':'P:'+esc(state.wifi.pass)+';'};`;
+  }
+  let t=(state.text||'').trim();
+  if(!t) return 'https://tu-negocio.com';
+  if(/^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(t) && !/^https?:\/\//i.test(t) && !t.includes(' ')) t='https://'+t;
+  return t;
+}
+
+/* ---------- opciones qr-code-styling ---------- */
+function qrOptions(px, imageDataUrl, forceMask){
+  const s = STYLES[state.style];
+  const hasImg = !!(imageDataUrl);
+  const o = {
+    width:px, height:px, type:'canvas', data:buildPayload(), margin: forceMask?0:8,
+    qrOptions:{ errorCorrectionLevel: hasImg?'H':'M' },
+    dotsOptions:{ type:s.dots, color: forceMask?'#000000':state.colorFg },
+    cornersSquareOptions:{ type:s.corners, color: forceMask?'#000000':state.colorFg },
+    cornersDotOptions:{ type:s.cornerDot, color: forceMask?'#000000':state.colorFg },
+    backgroundOptions:{ color: forceMask?'#ffffff':state.colorBg }
+  };
+  if(hasImg){
+    o.image = imageDataUrl;
+    o.imageOptions = { crossOrigin:'anonymous', margin: forceMask?0:4, imageSize:0.42, hideBackgroundDots:true };
+  }
+  return o;
+}
+
+let qrInst=null;
+function renderQr2d(){
+  const wrap = $('#qrCanvasWrap');
+  if(!window.QRCodeStyling){ wrap.innerHTML='<div class="viewer-msg">Cargando el motor del QR…</div>'; return; }
+  wrap.innerHTML='';
+  qrInst = new QRCodeStyling(qrOptions(240, state.center.dataUrl, false));
+  qrInst.append(wrap);
+  updateWarnings();
+}
+
+async function getRawBlob(px, ext){
+  const inst = new QRCodeStyling(qrOptions(px, state.center.dataUrl, false));
+  return await inst.getRawData(ext);
+}
+function saveBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+}
+
+/* ---------- advertencias en vivo ---------- */
+function currentQrModuleCount(){
+  try{
+    const tmp = new QRCodeStyling(qrOptions(120, state.center.dataUrl, false));
+    return tmp._qr ? tmp._qr.getModuleCount() : 25;
+  }catch(e){ return 25; }
+}
+function objectQrPanelWidthMm(){
+  const base = { soporte:50, llavero:26, placa:55 }[state.format];
+  return base * state.sizeScale;
+}
+function updateWarnings(){
+  const el = $('#warnings'); if(!el) return;
+  const rows=[];
+  const cr = contrastRatio(state.colorBg, state.colorFg);
+  if(cr<3){ rows.push(['bad','⚠️','Contraste bajo ('+cr.toFixed(1)+':1): el código no se podrá escanear bien. Usa una base clara y un color de código oscuro (o al revés).']); }
+  else { rows.push(['ok','✔️','Buen contraste ('+cr.toFixed(1)+':1).']); }
+
+  const n = currentQrModuleCount();
+  const wMm = objectQrPanelWidthMm();
+  const moduleMm = wMm / n;
+  if(moduleMm < 1.5){ rows.push(['bad','⚠️','Cada módulo mediría '+moduleMm.toFixed(2)+' mm: por debajo de 1,5 mm el nozzle redondea el detalle. Prueba un tamaño mayor o un enlace más corto.']); }
+  else { rows.push(['ok','✔️','Módulo de '+moduleMm.toFixed(2)+' mm — buen tamaño para imprimir.']); }
+
+  if(state.center.dataUrl) rows.push(['mid','ℹ️','El logo/emoji central ocupa módulos: haz una impresión de prueba antes de un lote grande.']);
+
+  el.innerHTML = rows.map(r=>`<div class="warn ${r[0]}"><span>${r[1]}</span><span>${r[2]}</span></div>`).join('');
+}
+
+/* ---------- UI: pestañas contenido ---------- */
+function setupTabs(){
+  $('#tabLink').addEventListener('click', ()=>switchTab('link'));
+  $('#tabWifi').addEventListener('click', ()=>switchTab('wifi'));
+}
+function switchTab(tab){
+  state.tab=tab;
+  $('#tabLink').setAttribute('aria-selected', tab==='link');
+  $('#tabWifi').setAttribute('aria-selected', tab==='wifi');
+  $('#paneLink').hidden = tab!=='link';
+  $('#paneWifi').hidden = tab!=='wifi';
+  scheduleAll();
+}
+
+/* ---------- UI: estilos ---------- */
+function styleIcon(preset){
+  const r = preset.dots==='dots'||preset.dots==='classy-rounded' ? 6 : (preset.dots==='rounded'?3:0);
+  return `<svg width="34" height="34" viewBox="0 0 34 34"><rect width="34" height="34" rx="6" fill="#fff" stroke="#e3e3df"/>
+    ${[4,12,20].map(x=>[4,12,20].map(y=>`<rect x="${x+3}" y="${y+3}" width="6" height="6" rx="${r}" fill="#14161a"/>`).join('')).join('')}
+  </svg>`;
+}
+function setupStyleGrid(){
+  const grid = $('#styleGrid');
+  grid.innerHTML = Object.entries(STYLES).map(([key,s])=>
+    `<button type="button" data-style="${key}" aria-pressed="${key===state.style}">${styleIcon(s)}${s.label}</button>`
+  ).join('');
+  grid.addEventListener('click', e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    state.style=b.dataset.style;
+    $all('button',grid).forEach(x=>x.setAttribute('aria-pressed', x===b));
+    scheduleAll();
+  });
+}
+
+/* ---------- UI: colores ---------- */
+function setupColors(){
+  const bg=$('#colorBg'), fg=$('#colorFg');
+  bg.addEventListener('input', ()=>{ state.colorBg=bg.value; $('#colorBgHex').textContent=bg.value.toUpperCase(); scheduleAll(); });
+  fg.addEventListener('input', ()=>{ state.colorFg=fg.value; $('#colorFgHex').textContent=fg.value.toUpperCase(); scheduleAll(); });
+}
+
+/* ---------- UI: centro (emoji / logo) ---------- */
+function emojiToDataUrl(emoji){
+  const c=document.createElement('canvas'); c.width=160; c.height=160;
+  const ctx=c.getContext('2d');
+  ctx.font='120px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(emoji, 80, 88);
+  return c.toDataURL('image/png');
+}
+function fileToDataUrl(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        const size=300, c=document.createElement('canvas'); c.width=size; c.height=size;
+        const ctx=c.getContext('2d');
+        const scale=Math.min(size/img.width, size/img.height);
+        const w=img.width*scale, h=img.height*scale;
+        ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h);
+        res(c.toDataURL('image/png'));
+      };
+      img.onerror=rej;
+      img.src=r.result;
+    };
+    r.onerror=rej;
+    r.readAsDataURL(file);
+  });
+}
+function setupCenterPicker(){
+  const pick=$('#emojiPicker');
+  pick.innerHTML = EMOJIS.map(e=>`<button type="button" data-emoji="${e}" aria-pressed="${state.center.type==='emoji'&&state.center.value===e}">${e}</button>`).join('');
+  pick.addEventListener('click', e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    const emoji=b.dataset.emoji;
+    state.center = { type:'emoji', value:emoji, dataUrl: emojiToDataUrl(emoji) };
+    $all('button',pick).forEach(x=>x.setAttribute('aria-pressed', x===b));
+    $('#removeCenter').hidden=false;
+    scheduleAll();
+  });
+  $('#logoUpload').addEventListener('change', async e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const dataUrl = await fileToDataUrl(f);
+    state.center = { type:'logo', value:f.name, dataUrl };
+    $all('button',pick).forEach(x=>x.setAttribute('aria-pressed','false'));
+    $('#removeCenter').hidden=false;
+    scheduleAll();
+  });
+  $('#removeCenter').addEventListener('click', ()=>{
+    state.center={type:'none', value:null, dataUrl:null};
+    $all('button',pick).forEach(x=>x.setAttribute('aria-pressed','false'));
+    $('#logoUpload').value='';
+    $('#removeCenter').hidden=true;
+    scheduleAll();
+  });
+}
+
+/* ---------- UI: formato 3D ---------- */
+function formatIcon(key){
+  if(key==='soporte') return `<svg width="30" height="30" viewBox="0 0 30 30"><rect x="4" y="20" width="22" height="4" rx="1" fill="#14161a"/><path d="M6 20 L11 6 L24 6 L24 20 Z" fill="none" stroke="#14161a" stroke-width="2"/></svg>`;
+  if(key==='llavero') return `<svg width="30" height="30" viewBox="0 0 30 30"><circle cx="11" cy="7" r="4" fill="none" stroke="#14161a" stroke-width="2"/><rect x="7" y="11" width="16" height="16" rx="2" fill="none" stroke="#14161a" stroke-width="2"/></svg>`;
+  return `<svg width="30" height="30" viewBox="0 0 30 30"><rect x="4" y="4" width="22" height="22" rx="2" fill="none" stroke="#14161a" stroke-width="2"/><circle cx="8" cy="8" r="1.4" fill="#14161a"/><circle cx="22" cy="8" r="1.4" fill="#14161a"/></svg>`;
+}
+function setupFormatGrid(){
+  const grid=$('#formatGrid');
+  grid.innerHTML = Object.entries(FORMATS).map(([k,f])=>`<button type="button" data-format="${k}" aria-pressed="${k===state.format}">${formatIcon(k)}${f.label}</button>`).join('');
+  grid.addEventListener('click', e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    const changed = state.format !== b.dataset.format;
+    state.format=b.dataset.format;
+    $all('button',grid).forEach(x=>x.setAttribute('aria-pressed', x===b));
+    scheduleAll(changed);
+  });
+}
+
+/* ---------- resto de inputs ---------- */
+function setupMisc(){
+  $('#inputLink').addEventListener('input', e=>{ state.text=e.target.value; scheduleAll(); });
+  $('#wifiSsid').addEventListener('input', e=>{ state.wifi.ssid=e.target.value; scheduleAll(); });
+  $('#wifiPass').addEventListener('input', e=>{ state.wifi.pass=e.target.value; scheduleAll(); });
+  $('#wifiSec').addEventListener('change', e=>{ state.wifi.sec=e.target.value; scheduleAll(); });
+  $('#label3d').addEventListener('input', e=>{ state.label3d=e.target.value; scheduleAll(); });
+  $('#sizeSelect').addEventListener('change', e=>{ state.sizeScale=parseFloat(e.target.value); scheduleAll(true); });
+}
+
+/* ---------- orquestación ---------- */
+const scheduleQr = debounce(()=>{ renderQr2d(); }, 130);
+const schedule3d = debounce((resetCam)=>{ Viewer3D.rebuild(resetCam); }, 160);
+function scheduleAll(resetCam){ scheduleQr(); schedule3d(!!resetCam); }
+
+/* =========================================================
+   GEOMETRÍA 3D
+   ========================================================= */
+
+function gridRects(on, cols, rows){
+  const used = new Uint8Array(cols*rows), out=[];
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    if(used[r*cols+c] || !on(r,c)) continue;
+    let w=1; while(c+w<cols && !used[r*cols+c+w] && on(r,c+w)) w++;
+    let h=1;
+    growLoop: while(r+h<rows){
+      for(let k=0;k<w;k++) if(used[(r+h)*cols+c+k] || !on(r+h,c+k)) break growLoop;
+      h++;
+    }
+    for(let rr=r;rr<r+h;rr++) for(let cc=c;cc<c+w;cc++) used[rr*cols+cc]=1;
+    out.push({c,r,w,h});
+  }
+  return out;
+}
+
+/* soporte "box soup" indexado, con función de mapeo opcional para caras inclinadas */
+function BoxSoup(){ this.positions=[]; this.indices=[]; this.vcount=0; }
+BoxSoup.prototype.addOriented = function(mapFn, u,v,h,w,d,ht){
+  const corners = [
+    [u,v,h],[u+w,v,h],[u+w,v+d,h],[u,v+d,h],
+    [u,v,h+ht],[u+w,v,h+ht],[u+w,v+d,h+ht],[u,v+d,h+ht]
+  ].map(p=>mapFn(p[0],p[1],p[2]));
+  const base=this.vcount;
+  for(const p of corners) this.positions.push(p[0],p[1],p[2]);
+  const faces=[
+    [0,2,1, 0,3,2], // abajo
+    [4,5,6, 4,6,7], // arriba
+    [0,1,5, 0,5,4], // frente
+    [1,2,6, 1,6,5], // derecha
+    [2,3,7, 2,7,6], // atrás
+    [3,0,4, 3,4,7]  // izquierda
+  ];
+  for(const f of faces) for(const i of f) this.indices.push(base+i);
+  this.vcount+=8;
+};
+BoxSoup.prototype.toGeometry = function(THREE){
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(this.positions,3));
+  g.setIndex(this.indices);
+  g.computeVertexNormals();
+  return g;
+};
+
+/* rasteriza texto corto a grid booleano */
+function textGrid(text, cols, rows){
+  const px=10;
+  const c=document.createElement('canvas'); c.width=cols*px; c.height=rows*px;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height);
+  ctx.fillStyle='#000';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font='bold '+Math.floor(rows*px*0.72)+'px Inter, system-ui, sans-serif';
+  let t=(text||'').trim().toUpperCase().slice(0,24) || ' ';
+  ctx.fillText(t, c.width/2, c.height/2+1, c.width*0.94);
+  const data=ctx.getImageData(0,0,c.width,c.height).data;
+  const on=(r,cc)=>{
+    let dark=0, total=0;
+    for(let y=r*px;y<r*px+px;y++) for(let x=cc*px;x<cc*px+px;x++){
+      const i=(y*c.width+x)*4; total++; if(data[i]<128) dark++;
+    }
+    return dark/total > 0.35;
+  };
+  return { on, cols, rows };
+}
+
+/* rasteriza silueta de logo/emoji (dataURL) a grid booleano cols x rows */
+function silhouetteGrid(dataUrl, cols, rows){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{
+      const px=8, w=cols*px, h=rows*px;
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      const ctx=c.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
+      const data=ctx.getImageData(0,0,w,h).data;
+      let hasAlpha=false;
+      for(let i=3;i<data.length;i+=4*17){ if(data[i]<250){hasAlpha=true; break;} }
+      const on=(r,cc)=>{
+        let hit=0,total=0;
+        for(let y=r*px;y<r*px+px;y++) for(let x=cc*px;x<cc*px+px;x++){
+          const i=(y*w+x)*4; total++;
+          if(hasAlpha){ if(data[i+3]>110) hit++; }
+          else{ const lum=0.2126*data[i]+0.7152*data[i+1]+0.0722*data[i+2]; if(lum<160) hit++; }
+        }
+        return hit/total>0.4;
+      };
+      resolve({on, cols, rows});
+    };
+    img.onerror=()=>resolve(null);
+    img.src=dataUrl;
+  });
+}
+
+/* construye el modelo 3D completo -> {baseGeom, reliefGeom, warn} */
+async function buildModel(THREE){
+  const n = currentQrModuleCount();
+  const qrInstTmp = new QRCodeStyling(qrOptions(120, state.center.dataUrl, true));
+  await new Promise(r=>setTimeout(r,0)); // deja que _qr exista
+  const isDark = (r,c)=> qrInstTmp._qr ? qrInstTmp._qr.isDark(r,c) : false;
+  const moduleGrid = Array.from({length:n}, (_,r)=>Array.from({length:n}, (_,c)=>isDark(r,c)));
+
+  if(state.center.dataUrl){
+    const imgCells = Math.max(5, Math.round(n*0.26) | 1);
+    const sil = await silhouetteGrid(state.center.dataUrl, imgCells, imgCells);
+    if(sil){
+      const off = Math.floor((n-imgCells)/2);
+      for(let r=0;r<imgCells;r++) for(let c=0;c<imgCells;c++){
+        moduleGrid[off+r][off+c] = sil.on(r,c);
+      }
+    }
+  }
+
+  const sizeScale = state.sizeScale;
+  const F = state.format;
+  const relief = new BoxSoup();
+  const reliefH = 1.2, sink = 0.15;
+  const idFlat = (u,v,h)=>[u,v,h];
+
+  let baseGeom, panelWidth, panelHeight, thickness=3.2;
+
+  const qrSizeMm = { soporte:50, llavero:26, placa:55 }[F] * sizeScale;
+  const textHMm  = { soporte:9,  llavero:6,  placa:9  }[F] * sizeScale;
+  const marginSide = { soporte:7, llavero:5, placa:8 }[F] * sizeScale;
+  const marginBetween = 3 * sizeScale;
+
+  const qrCellMm = qrSizeMm/n;
+  const tCols = Math.min(160, Math.max(40, Math.round((state.label3d||'—').length*9)));
+  const tRows = 16;
+  const tg = textGrid(state.label3d, tCols, tRows);
+  const textCellMm = (qrSizeMm/tCols);
+  const textAreaHMm = textCellMm*tRows;
+
+  panelWidth = qrSizeMm + marginSide*2;
+
+  if(F==='llavero' || F==='placa'){
+    thickness = F==='llavero'? 3.0 : 3.4;
+    const marginTop = { llavero:10, placa:9 }[F]*sizeScale;
+    const marginBottom = 6*sizeScale;
+    panelHeight = marginTop + qrSizeMm + marginBetween + textAreaHMm + marginBottom;
+
+    const shape=new THREE.Shape();
+    const w=panelWidth, hgt=panelHeight, r=3;
+    shape.moveTo(r,0); shape.lineTo(w-r,0); shape.quadraticCurveTo(w,0,w,r);
+    shape.lineTo(w,hgt-r); shape.quadraticCurveTo(w,hgt,w-r,hgt);
+    shape.lineTo(r,hgt); shape.quadraticCurveTo(0,hgt,0,hgt-r);
+    shape.lineTo(0,r); shape.quadraticCurveTo(0,0,r,0);
+
+    if(F==='llavero'){
+      const holeR=2.1*Math.max(0.85,sizeScale), cx=w/2, cy=hgt-6*sizeScale;
+      const h=new THREE.Path(); h.absarc(cx,cy,holeR,0,Math.PI*2,false); shape.holes.push(h);
+    } else {
+      const holeR=1.8*Math.max(0.85,sizeScale), m=8*sizeScale;
+      const h1=new THREE.Path(); h1.absarc(m,hgt-m,holeR,0,Math.PI*2,false); shape.holes.push(h1);
+      const h2=new THREE.Path(); h2.absarc(w-m,hgt-m,holeR,0,Math.PI*2,false); shape.holes.push(h2);
+    }
+    baseGeom = new THREE.ExtrudeGeometry(shape, {depth:thickness, bevelEnabled:false, curveSegments:16});
+
+    const qrTop = panelHeight - marginTop;
+    const qrRects = gridRects((r,c)=>moduleGrid[r][c], n, n);
+    for(const rc of qrRects){
+      relief.addOriented(idFlat,
+        marginSide + rc.c*qrCellMm, qrTop-(rc.r+rc.h)*qrCellMm, thickness-sink,
+        rc.w*qrCellMm+0.02, rc.h*qrCellMm+0.02, reliefH+sink);
+    }
+    const textTop = qrTop - qrSizeMm - marginBetween;
+    const textRects = gridRects((r,c)=>tg.on(r,c), tCols, tRows);
+    const textOffsetX = (panelWidth - tCols*textCellMm)/2;
+    for(const rc of textRects){
+      relief.addOriented(idFlat,
+        textOffsetX + rc.c*textCellMm, textTop-(rc.r+rc.h)*textCellMm, thickness-sink,
+        rc.w*textCellMm+0.02, rc.h*textCellMm+0.02, reliefH+sink);
+    }
+  } else {
+    /* soporte: cuña sólida inclinada */
+    const angleDeg=38, angle=angleDeg*Math.PI/180, frontLip=3;
+    const L = qrSizeMm + marginBetween + textAreaHMm + 10*sizeScale;
+    const D = L*Math.sin(angle);
+    const backHeight = frontLip + L*Math.cos(angle);
+    panelHeight = backHeight; thickness = D;
+
+    const shape=new THREE.Shape();
+    shape.moveTo(0,0); shape.lineTo(D,0); shape.lineTo(D,frontLip); shape.lineTo(0,backHeight); shape.closePath();
+    const geomLocal = new THREE.ExtrudeGeometry(shape, {depth:panelWidth, bevelEnabled:false, curveSegments:1});
+    const pos = geomLocal.attributes.position;
+    for(let i=0;i<pos.count;i++){
+      const x=pos.getX(i), y=pos.getY(i), z=pos.getZ(i);
+      pos.setXYZ(i, z, x, y); // (depth-extrude, shapeX=depth, shapeY=height) -> world (width, depth, height)
+    }
+    pos.needsUpdate=true; geomLocal.computeVertexNormals();
+    baseGeom = geomLocal;
+
+    const sinA=Math.sin(angle), cosA=Math.cos(angle);
+    const mapSlant=(u,v,h)=>[ u, D - v*sinA + h*cosA, frontLip + v*cosA + h*sinA ];
+
+    const vTop = L - 8*sizeScale;
+    const qrRects = gridRects((r,c)=>moduleGrid[r][c], n, n);
+    for(const rc of qrRects){
+      relief.addOriented(mapSlant,
+        marginSide + rc.c*qrCellMm, vTop-(rc.r+rc.h)*qrCellMm, -sink,
+        rc.w*qrCellMm+0.02, rc.h*qrCellMm+0.02, reliefH+sink);
+    }
+    const textTop = vTop - qrSizeMm - marginBetween;
+    const textRects = gridRects((r,c)=>tg.on(r,c), tCols, tRows);
+    const textOffsetX = (panelWidth - tCols*textCellMm)/2;
+    for(const rc of textRects){
+      relief.addOriented(mapSlant,
+        textOffsetX + rc.c*textCellMm, textTop-(rc.r+rc.h)*textCellMm, -sink,
+        rc.w*textCellMm+0.02, rc.h*textCellMm+0.02, reliefH+sink);
+    }
+  }
+
+  const reliefGeom = relief.toGeometry(THREE);
+  return { baseGeom, reliefGeom, dims:{panelWidth, panelHeight, thickness} };
+}
+
+/* =========================================================
+   VISOR 3D (three.js)
+   ========================================================= */
+const Viewer3D = (function(){
+  let THREE=null, scene, camera, renderer, controls, group, baseMesh, reliefMesh;
+  let ready=false, visible=false, loading=false, io=null, lastFormat=null, genCounter=0;
+
+  function initIO(){
+    const shell=$('#viewerShell');
+    io = new IntersectionObserver(entries=>{
+      entries.forEach(en=>{
+        if(en.isIntersecting && !ready && !loading) boot();
+        visible = en.isIntersecting;
+      });
+    }, {rootMargin:'200px'});
+    io.observe(shell);
+  }
+
+  async function boot(){
+    loading=true;
+    const shell=$('#viewerShell'), msg=$('#viewerMsg');
+    if(!window.WebGLRenderingContext){
+      msg.textContent='Tu navegador no soporta WebGL: puedes seguir descargando PNG, SVG y 3MF sin previsualización.';
+      loading=false; return;
+    }
+    try{
+      msg.textContent='Cargando el visor 3D…';
+      THREE = await import('three');
+      const ctrlMod = await import('three/addons/controls/OrbitControls.js');
+      window.__OrbitControls = ctrlMod.OrbitControls;
+
+      const canvas=document.createElement('canvas'); shell.appendChild(canvas);
+      renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+      renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1));
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(38, 1, 0.1, 2000);
+      scene.add(new THREE.HemisphereLight(0xffffff,0x555555,1.15));
+      const dl=new THREE.DirectionalLight(0xffffff,0.9); dl.position.set(60,90,80); scene.add(dl);
+      const dl2=new THREE.DirectionalLight(0xffffff,0.35); dl2.position.set(-60,30,-40); scene.add(dl2);
+
+      controls = new window.__OrbitControls(camera, renderer.domElement);
+      controls.enableDamping=true; controls.dampingFactor=0.08;
+
+      group = new THREE.Group(); scene.add(group);
+
+      resize();
+      window.addEventListener('resize', debounce(resize,120));
+      msg.remove();
+      ready=true; loading=false;
+      animate();
+      rebuild(true);
+    }catch(e){
+      console.error(e);
+      msg.textContent='No se ha podido cargar el visor 3D en este navegador. Las descargas siguen funcionando.';
+      loading=false;
+    }
+  }
+
+  function resize(){
+    const shell=$('#viewerShell'); if(!renderer||!shell) return;
+    const w=shell.clientWidth, h=shell.clientHeight;
+    if(w===0||h===0) return;
+    renderer.setSize(w,h,false);
+    camera.aspect=w/h; camera.updateProjectionMatrix();
+  }
+
+  function animate(){
+    requestAnimationFrame(animate);
+    if(!ready || !visible || document.hidden) return;
+    controls.update();
+    renderer.render(scene,camera);
+  }
+
+  async function rebuild(resetCam){
+    if(!ready) return;
+    const myGen = ++genCounter;
+    const model = await buildModel(THREE);
+    if(myGen!==genCounter) return; // llegó una reconstrucción más nueva mientras tanto
+
+    if(baseMesh){ group.remove(baseMesh); baseMesh.geometry.dispose(); baseMesh.material.dispose(); }
+    if(reliefMesh){ group.remove(reliefMesh); reliefMesh.geometry.dispose(); reliefMesh.material.dispose(); }
+
+    const matBase = new THREE.MeshStandardMaterial({color:state.colorBg, roughness:0.75, metalness:0.03, side:THREE.DoubleSide});
+    const matRelief = new THREE.MeshStandardMaterial({color:state.colorFg, roughness:0.6, metalness:0.03, side:THREE.DoubleSide});
+    baseMesh = new THREE.Mesh(model.baseGeom, matBase);
+    reliefMesh = new THREE.Mesh(model.reliefGeom, matRelief);
+    group.add(baseMesh, reliefMesh);
+
+    if(resetCam || lastFormat!==state.format){
+      lastFormat=state.format;
+      const d=model.dims;
+      group.position.set(-d.panelWidth/2, -d.panelHeight/2, -d.thickness/2);
+      const dist = Math.max(d.panelWidth, d.panelHeight, 60)*1.9;
+      if(state.format==='soporte'){
+        camera.position.set(dist*0.75, -dist*0.15, dist*0.55);
+      } else {
+        camera.position.set(0, 0, dist);
+      }
+      camera.up.set(0,0,1);
+      camera.lookAt(0,0,0);
+      controls.target.set(0,0,0);
+      controls.update();
+    }
+  }
+
+  return { initIO, rebuild:(r)=>{ if(ready) rebuild(r); } };
+})();
+
+/* =========================================================
+   EXPORT 3MF
+   ========================================================= */
+function geometryTriangles(geometry){
+  const pos = geometry.attributes.position;
+  const idx = geometry.index;
+  const tris=[];
+  if(idx){
+    for(let i=0;i<idx.count;i+=3){
+      tris.push([idx.getX(i),idx.getX(i+1),idx.getX(i+2)]);
+    }
+  } else {
+    for(let i=0;i<pos.count;i+=3) tris.push([i,i+1,i+2]);
+  }
+  const verts=[];
+  for(let i=0;i<pos.count;i++) verts.push([pos.getX(i),pos.getY(i),pos.getZ(i)]);
+  return {verts,tris};
+}
+
+function build3mfXml(partA, partB, colorA, colorB){
+  // traslada ambas piezas al octante positivo usando el mismo offset
+  let minX=Infinity,minY=Infinity,minZ=Infinity;
+  [partA,partB].forEach(p=>p.verts.forEach(v=>{
+    if(v[0]<minX)minX=v[0]; if(v[1]<minY)minY=v[1]; if(v[2]<minZ)minZ=v[2];
+  }));
+  function weldedObject(part, offset){
+    const map=new Map(); const outV=[]; const outI=[];
+    function key(v){ return Math.round((v[0]-minX)*1000)+'_'+Math.round((v[1]-minY)*1000)+'_'+Math.round((v[2]-minZ)*1000); }
+    const remap=new Array(part.verts.length);
+    part.verts.forEach((v,i)=>{
+      const k=key(v);
+      if(map.has(k)) remap[i]=map.get(k);
+      else{ const id=outV.length; outV.push([v[0]-minX, v[1]-minY, v[2]-minZ]); map.set(k,id); remap[i]=id; }
+    });
+    part.tris.forEach(t=>{
+      const a=remap[t[0]],b=remap[t[1]],c=remap[t[2]];
+      if(a===b||b===c||a===c) return;
+      outI.push([a,b,c]);
+    });
+    return {outV,outI};
+  }
+  const A=weldedObject(partA), B=weldedObject(partB);
+  const vXml=(v)=>v.map(p=>`<vertex x="${p[0].toFixed(4)}" y="${p[1].toFixed(4)}" z="${p[2].toFixed(4)}"/>`).join('');
+  const tXml=(t,pid)=>t.map(tr=>`<triangle v1="${tr[0]}" v2="${tr[1]}" v3="${tr[2]}" pid="1" p1="${pid}"/>`).join('');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<model unit="millimeter" xml:lang="es-ES" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">
+  <resources>
+    <basematerials id="1">
+      <base name="Base" displaycolor="${colorA}FF"/>
+      <base name="Codigo" displaycolor="${colorB}FF"/>
+    </basematerials>
+    <object id="2" type="model" pid="1" pindex="0"><mesh>
+      <vertices>${vXml(A.outV)}</vertices>
+      <triangles>${tXml(A.outI,0)}</triangles>
+    </mesh></object>
+    <object id="3" type="model" pid="1" pindex="1"><mesh>
+      <vertices>${vXml(B.outV)}</vertices>
+      <triangles>${tXml(B.outI,1)}</triangles>
+    </mesh></object>
+  </resources>
+  <build><item objectid="2"/><item objectid="3"/></build>
+</model>`;
+}
+
+async function export3mf(){
+  const THREE = await import('three');
+  const model = await buildModel(THREE);
+  const partA = geometryTriangles(model.baseGeom);
+  const partB = geometryTriangles(model.reliefGeom);
+  const xml = build3mfXml(partA, partB, state.colorBg.replace('#','').toUpperCase()==='' ? 'F2F1EC' : state.colorBg.replace('#','').toUpperCase(), state.colorFg.replace('#','').toUpperCase());
+
+  const zip = new JSZip();
+  zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>`);
+  zip.folder('_rels').file('.rels', `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel" Target="/3D/3dmodel.model"/></Relationships>`);
+  zip.folder('3D').file('3dmodel.model', xml);
+  const blob = await zip.generateAsync({type:'blob', mimeType:'model/3mf', compression:'DEFLATE'});
+  saveBlob(blob, `qr3d-${state.format}-${slugFromText(buildPayload())}.3mf`);
+  onDownloaded();
+}
+
+async function exportStl(){
+  const THREE = await import('three');
+  const { STLExporter } = await import('three/addons/exporters/STLExporter.js');
+  const model = await buildModel(THREE);
+  const meshA = new THREE.Mesh(model.baseGeom);
+  const meshB = new THREE.Mesh(model.reliefGeom);
+  const exporter = new STLExporter();
+  const stlA = exporter.parse(meshA, {binary:true});
+  const stlB = exporter.parse(meshB, {binary:true});
+  const zip = new JSZip();
+  zip.file('base.stl', stlA);
+  zip.file('codigo-qr.stl', stlB);
+  zip.file('LEEME.txt', 'Importa ambos archivos STL en tu slicer, colócalos en el origen (0,0) y asigna un filamento a cada pieza:\n- base.stl -> color de fondo\n- codigo-qr.stl -> color del código\n\nSi tu impresora soporta 3MF, descarga mejor ese formato: lleva los colores integrados.');
+  const blob = await zip.generateAsync({type:'blob'});
+  saveBlob(blob, `qr3d-${state.format}-stl.zip`);
+  onDownloaded();
+}
+
+/* ---------- popup de descarga + toast esquina ---------- */
+function onDownloaded(){
+  document.dispatchEvent(new Event('qr:downloaded'));
+}
+function setupAds(){
+  document.addEventListener('qr:downloaded', ()=>{
+    setTimeout(()=>{ safe(()=>$('#dlDialog').showModal()); }, 350);
+  });
+  $('#dlDialogClose').addEventListener('click', ()=> $('#dlDialog').close());
+  $('#dlDialog').addEventListener('click', e=>{ if(e.target===$('#dlDialog')) $('#dlDialog').close(); });
+
+  if(!sessionStorage.getItem('qr3d_corner_dismissed')){
+    setTimeout(()=>{ $('#cornerAd').hidden=false; }, 5000);
+  }
+  $('#cornerAdClose').addEventListener('click', ()=>{
+    $('#cornerAd').hidden=true;
+    sessionStorage.setItem('qr3d_corner_dismissed','1');
+  });
+}
+
+/* ---------- FAQ ---------- */
+function setupFaq(){
+  const items = [
+    ['¿Qué es exactamente el archivo 3MF que descargo?','Es un archivo de impresión 3D que contiene dos piezas —la base y el código en relieve— cada una con su color. Al abrirlo en el software de tu impresora, cada pieza aparece ya coloreada, lista para asignarle un filamento distinto.'],
+    ['¿Con qué impresora 3D funciona?','Con cualquier impresora que admita dos colores o dos filamentos: sistemas multicolor tipo AMS/MMU, o un cambio de filamento manual guiado por el propio slicer. El programa debe soportar 3MF (Bambu Studio, PrusaSlicer, OrcaSlicer y Cura lo hacen).'],
+    ['¿Y si mi impresora es de un solo color?','Puedes imprimirlo en un color y pintar el relieve a mano, o cambiar el filamento manualmente en la capa donde empieza el código (el propio slicer te indica esa capa). El STL de la descarga secundaria sirve para este caso.'],
+    ['¿Qué tamaño mínimo debe tener para que se pueda escanear?','La herramienta calcula el tamaño de cada módulo según las dimensiones elegidas y avisa en rojo si baja de 1,5 mm, el límite a partir del cual el nozzle redondea el detalle y el código pierde nitidez.'],
+    ['¿Puedo usar mi propio logo?','Sí. Puedes subir una imagen o elegir un emoji para el centro del QR: se convierte en una silueta de un solo color, tanto en la imagen 2D como en el relieve 3D.'],
+    ['¿Es gratis?','Sí, no hace falta registrarse ni pagar nada para generar y descargar tu QR.'],
+    ['¿Mis datos se suben a algún servidor?','No. El QR y el modelo 3D se generan enteramente en tu navegador; nada de lo que escribas se envía a ningún servidor.']
+  ];
+  $('#faqList').innerHTML = items.map(([q,a])=>`<details><summary>${q}</summary><p>${a}</p></details>`).join('');
+}
+
+/* ---------- init ---------- */
+function bootQrLibWait(cb){
+  if(window.QRCodeStyling && window.JSZip) return cb();
+  setTimeout(()=>bootQrLibWait(cb), 60);
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  setupTabs(); setupStyleGrid(); setupColors(); setupCenterPicker();
+  setupFormatGrid(); setupMisc(); setupFaq(); setupAds();
+  Viewer3D.initIO();
+
+  $('#dlPng').addEventListener('click', async ()=>{
+    const blob = await getRawBlob(1000,'png');
+    saveBlob(blob, `qr-${slugFromText(buildPayload())}.png`); onDownloaded();
+  });
+  $('#dlSvg').addEventListener('click', async ()=>{
+    const blob = await getRawBlob(1000,'svg');
+    saveBlob(blob, `qr-${slugFromText(buildPayload())}.svg`); onDownloaded();
+  });
+  $('#dl3mf').addEventListener('click', async ()=>{
+    const btn=$('#dl3mf'); btn.disabled=true; const old=btn.textContent; btn.textContent='Generando…';
+    try{ await export3mf(); } catch(e){ console.error(e); alert('No se ha podido generar el 3MF. Prueba con un enlace más corto.'); }
+    btn.disabled=false; btn.textContent=old;
+  });
+  $('#dlStl').addEventListener('click', async ()=>{
+    const btn=$('#dlStl'); btn.disabled=true; const old=btn.textContent; btn.textContent='Generando…';
+    try{ await exportStl(); } catch(e){ console.error(e); alert('No se ha podido generar el STL.'); }
+    btn.disabled=false; btn.textContent=old;
+  });
+
+  bootQrLibWait(()=>{ renderQr2d(); });
+});
+
+})();
+</script>
+</body>
+</html>
